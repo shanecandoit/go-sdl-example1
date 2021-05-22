@@ -1,6 +1,11 @@
 package main
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"fmt"
+	"time"
+
+	"github.com/veandco/go-sdl2/sdl"
+)
 
 func main() {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
@@ -25,15 +30,51 @@ func main() {
 	surface.FillRect(&rect, 0xffff0000)
 	window.UpdateSurface()
 
+	start := ts()
+	tick := start
+	frames := 0
 	running := true
+	var mx, my int32
 	for running {
+		mx, my = -999, -999
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
+			ts := tsDiff(start)
+			switch t := event.(type) {
+
 			case *sdl.QuitEvent:
-				println("Quit")
+
+				println(ts, "Quit")
 				running = false
-				break
+				// break
+
+			case *sdl.MouseMotionEvent:
+				// https://github.com/veandco/go-sdl2-examples/blob/master/examples/mouse-input/mouse-input.go
+				fmt.Println(ts, "Mouse", t.Which, "dx,dy:", t.X, t.YRel, " x,y:", t.X, t.Y)
+				mx, my = t.X, t.Y
+				//println("mouseMotion", x)
 			}
+			tick = ts
 		}
+		sdl.Delay(16)
+
+		// stop after 5 seconds
+		if tick > 5_000 {
+			running = false
+		}
+		frames++
+
+		// draw
+		rect := sdl.Rect{mx, my, 32, 32}
+		surface.FillRect(&rect, 0xff00ff00)
+		window.UpdateSurface()
 	}
+	println("drew", frames, "frames")
+}
+
+func ts() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func tsDiff(startTime int64) int64 {
+	return ts() - startTime
 }
