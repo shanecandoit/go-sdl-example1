@@ -63,6 +63,9 @@ func main() {
 		}
 		frames++
 
+		// clear
+		surface.FillRect(nil, 0)
+
 		// draw
 		rect := sdl.Rect{mx, my, 32, 32}
 		surface.FillRect(&rect, 0xff00ff00)
