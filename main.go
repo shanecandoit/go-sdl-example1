@@ -1,10 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 func main() {
@@ -19,6 +21,39 @@ func main() {
 		panic(err)
 	}
 	defer window.Destroy()
+
+	// logging
+	//file, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(file)
+
+	// font
+	// ./assets/SourceCodePro-Regular.ttf
+	var font *ttf.Font
+	if err = ttf.Init(); err != nil {
+		return
+	}
+	defer ttf.Quit()
+	fontPath := "assets/SourceCodePro-Regular.ttf"
+	fontSize := 16
+	if font, err = ttf.OpenFont(fontPath, fontSize); err != nil {
+		// return
+		log.Fatal(err)
+	}
+	defer font.Close()
+	// Create a red text with the font
+	text, err := font.RenderUTF8Blended("Hello, World!", sdl.Color{R: 255, G: 255, B: 255, A: 255})
+	if err != nil {
+		return
+	}
+	defer text.Free()
+	// Draw the text around the center of the window
+	//if err = text.Blit(nil, surface, &sdl.Rect{X: 400 - (text.W / 2), Y: 300 - (text.H / 2), W: 0, H: 0}); err != nil {
+	//	return
+	//}
 
 	surface, err := window.GetSurface()
 	if err != nil {
@@ -35,8 +70,9 @@ func main() {
 	frames := 0
 	running := true
 	var mx, my int32
+	mx, my = -999, -999
 	for running {
-		mx, my = -999, -999
+
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			ts := tsDiff(start)
 			switch t := event.(type) {
@@ -49,7 +85,7 @@ func main() {
 
 			case *sdl.MouseMotionEvent:
 				// https://github.com/veandco/go-sdl2-examples/blob/master/examples/mouse-input/mouse-input.go
-				fmt.Println(ts, "Mouse", t.Which, "dx,dy:", t.X, t.YRel, " x,y:", t.X, t.Y)
+				log.Println(ts, "Mouse", t.Which, "dx,dy:", t.X, t.YRel, " x,y:", t.X, t.Y)
 				mx, my = t.X, t.Y
 				//println("mouseMotion", x)
 			}
@@ -69,6 +105,8 @@ func main() {
 		// draw
 		rect := sdl.Rect{mx, my, 32, 32}
 		surface.FillRect(&rect, 0xff00ff00)
+		// draw text
+		text.Blit(nil, surface, &sdl.Rect{X: 400 - (text.W / 2), Y: 300 - (text.H / 2), W: 0, H: 0})
 		window.UpdateSurface()
 	}
 	println("drew", frames, "frames")
